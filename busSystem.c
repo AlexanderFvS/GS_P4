@@ -24,7 +24,7 @@ uint8_t reset () {
 }
 
 void writeComand (uint8_t comm) {
-	for (int i = 0; i < 8 ; i--) {
+	for (int i = 0; i < 8 ; i++) {
 		if (comm & 0x01){ 
 			writeHigh();
 	} else {
@@ -58,6 +58,10 @@ void readRom (uint8_t *rom) {
 	readBytes(rom, 8);
 }
 
+void readScratchpad (uint8_t *scratch) {
+	readBytes(scratch, 9);
+}
+
 
 
 	bool crcCheck(uint8_t *data, uint8_t length) {
@@ -75,7 +79,7 @@ void readRom (uint8_t *rom) {
         }
     }
 
-    // Rückgabe: true wenn CRC korrekt
+    // true wenn CRC korrekt
     return (crc == data[length - 1]);
 }
 	
