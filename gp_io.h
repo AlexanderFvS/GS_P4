@@ -17,6 +17,8 @@ void setOutput ();
 
 void openDrain ();
 
+void pushPull ();
+
 int readBit ();
 
 void readBytes(uint8_t *rom, int count);
