@@ -13,7 +13,8 @@ typedef struct __attribute__((packed)) ROM {
 
 typedef struct __attribute__((packed)) SCRATCH_PAD
 {
-	uint16_t temperatur;
+	uint8_t temperaturLSB;
+	uint8_t temperaturMSB;
 	uint16_t user;
 	uint16_t reserved;
 	uint8_t countRemain;
@@ -33,6 +34,8 @@ uint8_t reset ();
 void writeComand (uint8_t comm);
 
 void readRom (uint8_t *rom);
+
+void readScratchpad (uint8_t *scratch);
 
 bool crcCheck(uint8_t *data, uint8_t length);
 
