@@ -30,27 +30,48 @@
 
 int main(void){
 	initITSboard();                 // Initialisierung des ITS Boards
+	GUI_init(DEFAULT_BRIGHTNESS);
 	initTimer();
 	GPIOD -> BSRR = (0x01 << 1);		// Pin 1 auf 3.3V
 	openDrain();										// Pin 0 auf open Drain setzen
 	pinOn();
-	
+	printHeaderRow();
 	delay(20);
+	
+	
 	
 	while (true) {
 		
 		ROM sensor1;
 		if (reset() != 0) {
-			printf("Fehler: kein Sensor!");
+			printErrorSensor();
 		}
 		writeComand(READ_ROM);
 		readRom((uint8_t *)&sensor1);
 		if (crcCheck((uint8_t *)&sensor1, 8)) {
-			printRomInfo(&sensor1);
+			printSensorInfo(&sensor1);
 		} else {
-			printf("Crc Fehler in Rom!");
+			printErrorCrc();
 		}
-		delay(500);
+		
+		
+		SCRATCH_PAD scratchPad1;
+		
+		reset();
+		writeComand(SKIP_ROM);
+		writeComand(CONVERT_T);
+		pushPull();
+		timeDelay(750000);
+		openDrain();
+		reset();
+		writeComand(SKIP_ROM);
+		writeComand(READ_SCRATCHPAD);
+		readScratchpad((uint8_t *) &scratchPad1);
+		printTemp(&scratchPad1);
+		
+		
+		
+		
 		
 		
 		
