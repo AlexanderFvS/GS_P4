@@ -6,6 +6,7 @@
 #include "busSystem.h"
 
 
+#define CRC_POLYNOM 0x8C
 
 
 
@@ -65,22 +66,22 @@ void readScratchpad (uint8_t *scratch) {
 
 
 	bool crcCheck(uint8_t *data, uint8_t length) {
-    uint8_t crc = 0;
+    uint8_t crc = 0;																		// crc initialisieren
 
-    for (uint8_t i = 0; i < length - 1; i++) { // letzte Byte = CRC selbst
-        uint8_t byte = data[i];
+    for (uint8_t i = 0; i < length - 1; i++) { 					// letzte Byte ausgenommen, da CRC selbst
+        uint8_t byte = data[i];													// erstes Byte 
         for (uint8_t j = 0; j < 8; j++) {
-            uint8_t mix = (crc ^ byte) & 0x01;
-            crc >>= 1;
+            uint8_t mix = (crc ^ byte) & 0x01;					// vergleicht das niedrigste Bit von crc und byte. mix = 1 wenn ungleich
+            crc >>= 1;																	// CRC um 1 Bit nach rechts schieben (wie Division durch 2)
             if (mix) {
-                crc ^= 0x8C;
+                crc ^= CRC_POLYNOM;											// One-Wire CRC polynom überprüft crc an bestimmten stellen (8,7,3,2)
             }
-            byte >>= 1;
+            byte >>= 1;																	// nächstet bit 
         }
     }
 
     // true wenn CRC korrekt
-    return (crc == data[length - 1]);
+    return (crc == data[length - 1]);										// Ist der berechnete CRC gleich dem CRC aus dem Protokoll -> return true
 }
 	
 	
