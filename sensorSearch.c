@@ -13,11 +13,21 @@ typedef struct BIT_PAIR {
 	int bit2;
 } BIT_PAIR;
 
+typedef struct Decision{
+    int pos;      // Bitposition (0 bis 63)
+    int value;    // Entscheidung: 0 oder 1
+} Decision;
+
 
 BIT_PAIR currPair;
+int conflicts[64];
+
 int currConflict = -1;
-int lastConflict = -1;
+
+
 int sensorCount = 0;
+int conflictCount = 0; 
+int searchIndex = -1;
 
 #define CONFLICT 		(currPair.bit1 == 0x00 && currPair.bit2 == 0x00)
 #define ZERO 				(currPair.bit1 == 0x00 && currPair.bit2 == 0x01)
@@ -33,23 +43,29 @@ int sensorCount = 0;
 
 int SensorSearch (ROM* romList, int maxSensors) {
 	
-	
-	
-	currConflict = -1;																			// Werte zurücksetzen
-	lastConflict = -1;
+																																// Werte zurücksetzen
+	conflictCount = 0;
 	sensorCount = 0;
+	searchIndex = -1;
+	
 	memset(romList, 0, (sizeof(ROM) * maxSensors));
+	memset(conflicts, 0, sizeof(conflicts));
+	
 	
 	
 	
 	
 	while (sensorCount < maxSensors) {
+		
+		
+		
 		if (reset() != 0) {
-			return 0;
+			return sensorCount;
 		}
 	
-		
+		currConflict = -1;
 		writeComand(SEARCH_ROM);
+		
 		if (romSearch(&romList[sensorCount]) != 0) {
       return -1;
 		}
@@ -60,10 +76,16 @@ int SensorSearch (ROM* romList, int maxSensors) {
 		
 		sensorCount++;																							// Zähle gefundene Geräte
 		
-		if (currConflict == -1) {																		// nur abbrechen wenn keine weiteren Konflikte möglich sind
+		
+		if (currConflict != -1 && conflictCount < 64) {
+			conflicts[conflictCount] = currConflict;
+			conflictCount++;
+		}
+		
+		if (searchIndex + 1 >= conflictCount) {																		// nur abbrechen wenn keine weiteren Konflikte möglich sind
 			break;
 		}
-		lastConflict = currConflict;
+		searchIndex++;
 	}
 	
 	return sensorCount;
@@ -88,30 +110,27 @@ int romSearch (ROM * rom) {
 			writeLow();
 			
 		} else if (ONE) {
+			
 			temp |= ((uint64_t)1 << bitPos);
 			writeHigh();
-			
-		} else if (CONFLICT) {
-			
-			if (bitPos == lastConflict) {															// wenn bereits 0 gegeangen geh 1 
-				lastConflict = currConflict;
-				currConflict = -1;
-				temp |= ((uint64_t)1 << bitPos);
-				writeHigh();
-				
-				
-			} else if (currConflict == -1 && (lastConflict == -1 || bitPos > lastConflict)) {
-				currConflict = bitPos;
-				writeLow();
-				
-			} else {
-				writeLow();
-			}
 			
 		} else if (FAULT) {
 			
 			return -1;
-		}
+			
+		} else {
+			if (bitPos == conflicts[searchIndex]) {
+				
+				temp |= ((uint64_t)1 << bitPos);
+				writeHigh();
+				
+			} else {
+				
+				currConflict = bitPos;
+				writeLow();
+				
+			}
+		}	
 	}
 	
 	uint8_t *tempPtr = (uint8_t*)&temp;												// Kopiere temp in die ROM-Struktur 
