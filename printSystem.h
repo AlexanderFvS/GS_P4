@@ -4,13 +4,15 @@
 
 void printHeaderRow();
 
-void printSensorInfo(ROM *rom);
+void printSensorInfo(ROM *rom, int x);
 
 void printTemp(SCRATCH_PAD *spad);
 
 void printErrorSensor();
 
 void printErrorCrc();
+
+void clearScreen (int maxSensors, int sensorCount);
 
 
 #endif
