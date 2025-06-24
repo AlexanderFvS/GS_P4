@@ -19,7 +19,7 @@ int readBit () {
 	setInput();
 	timeDelay(9);
 	int aus = GPIOD -> IDR & OUTPUT_MASK_PIN_0;
-	timeDelay(55);
+	timeDelay(45);
 	setOutput();
 	
 	
