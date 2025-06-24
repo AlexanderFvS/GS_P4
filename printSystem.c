@@ -17,33 +17,41 @@ void printHeaderRow()
 	lcdPrintS("Sensor  PDROM                   Temp. [C]");
 }
  
-void printSensorInfo(ROM *rom)
+void printSensorInfo(ROM *rom, int sensorCount)
 {
-	uint8_t code_new = rom->familyCode;
-	lcdGotoXY(0, 1);
-	if (code_new != code_old) {
+	for (int i = 0; i < sensorCount; i++) {
+		ROM curr = rom[i];
+		
+		uint8_t code_new = curr.familyCode;
+		lcdGotoXY(0, (i +1));
+		lcdPrintReplS(" ");
+		lcdGotoXY(0, (i +1));
+		
 		if (code_new == DS18B20_FAMCODE)
 		{
-			lcdPrintS("DS18B20 ");
+			lcdPrintReplS("DS18B20 ");
 		}
 		else if (code_new == DS18S20_FAMCODE)
 		{
-			lcdPrintS("DS18S20 ");
+			lcdPrintReplS("DS18S20 ");
 		}
-		code_old = code_new;
-	}
-	
-	
-	lcdGotoXY(8, 1);
-	uint64_t rom_uint64_new = 0;
-  memcpy(&rom_uint64_new, rom, sizeof(ROM));
- 
-	if (rom_uint64_new != rom_uint64_old) {
+		
+		
+		
+		
+		lcdGotoXY(8,(i +1));
+		uint64_t rom_uint64_new = 0;
+		memcpy(&rom_uint64_new, &curr, sizeof(ROM));
+	 
 		char tempString[19];
 		sprintf(tempString, "0x%016llx", (unsigned long long) rom_uint64_new);
 		lcdPrintReplS(tempString);
-		rom_uint64_old = rom_uint64_new;
+		
+		
 	}
+	
+	
+	
 }
  
 void printTemp(SCRATCH_PAD *spad)
@@ -61,11 +69,19 @@ void printTemp(SCRATCH_PAD *spad)
 void printErrorSensor()
 {
 	lcdGotoXY(0, 1);
-	lcdPrintReplS("Keine Sensoren vorhanden");
+	lcdPrintReplS("Keine Sensoren gefunden!                 ");
 }
+
 
 void printErrorCrc()
 {
 	lcdGotoXY(0, 1);
-	lcdPrintReplS("Fehler in CRC Datei");
+	lcdPrintReplS("Fehler in der CRC Datei!                 ");
+}
+
+void clearScreen (int maxSensors, int sensorCount) {
+	for (int i = sensorCount; i < maxSensors; i++) {
+		lcdGotoXY(0,i + 1);
+		lcdPrintS(" ");
+	}
 }
