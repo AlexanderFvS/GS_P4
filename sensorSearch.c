@@ -14,17 +14,15 @@ typedef struct BIT_PAIR {
 } BIT_PAIR;
 
 typedef struct Decision{
-    int pos;      // Bitposition (0 bis 63)
-    int value;    // Entscheidung: 0 oder 1
+    int pos;     																						 // Bitposition (0 bis 63)
+    int value;	  																					 // Entscheidung: 0 oder 1
 } Decision;
 
-Decision decisionPath[MAX_SENSORS];
 BIT_PAIR currPair;
-
-
+Decision decisionPath[MAX_SENSORS];													// Speicher für Abzweigungen die wir genommen haben 					
 
 int sensorCount = 0;
-int decisionCount = -1; 
+int decisionCount = -1; 																		// Zähler für Abzweigungen (Stack höhe)
 
 
 #define CONFLICT 		(currPair.bit1 == 0x00 && currPair.bit2 == 0x00)
@@ -42,27 +40,26 @@ int decisionCount = -1;
 int SensorSearch (ROM* romList, int maxSensors) {
 	
 																															// Werte zurücksetzen
-
 	sensorCount = 0;
 	decisionCount = -1;
 	
 	memset(romList, 0, (sizeof(ROM) * maxSensors));
 	memset(decisionPath, 0, sizeof(decisionPath));
 	
-	setDecision(-1, 0);
+	setDecision(-1, 0);																					// Setzt basis Decision um Nullpointer abzufangen --> LastDiscrepancy = -1
 	
 	
 	while (sensorCount < maxSensors) {
 		
 		
 		
-		if (reset() != 0) {
+		if (reset() != 0) {																				// Bus Reset
 			return 0;
 		}
 	
-		writeComand(SEARCH_ROM);
+		writeComand(SEARCH_ROM);																	// Befehl für Sensoren 
 		
-		if (romSearch(&romList[sensorCount]) != 0) {
+		if (romSearch(&romList[sensorCount]) != 0) {							// Einlesen von Sensor
       return -1;
 		}
 		
@@ -72,7 +69,7 @@ int SensorSearch (ROM* romList, int maxSensors) {
 		
 		sensorCount++;																							// Zähle gefundene Geräte
 		
-		if (decisionCount <= 0) {																		// nur abbrechen wenn keine weiteren Konflikte möglich sind
+		if (decisionCount <= 0) {																		// nur abbrechen wenn es keine weiteren Konflikte gibt
 			break;
 		}
 	}
@@ -90,48 +87,46 @@ int SensorSearch (ROM* romList, int maxSensors) {
 int romSearch (ROM * rom) {
 	uint64_t temp = 0;
 	
-	
-	
-	int currDecision = decisionCount;
+	int currDecision = decisionCount;																// aktuell zu behandelnder Konflikt
 	
 	for (int bitPos = 0; bitPos < 64 ; bitPos++) {
 		
-		readBitPair();
+		readBitPair();																								// Einlesen
 		
-		if (ZERO) {
+		if (ZERO) {																										// bei 0 gehe 0
 			
 			writeLow();
 			
-		} else if (ONE) {
+		} else if (ONE) {																							// bei 1 gehe 1
 			
-			temp |= ((uint64_t)1 << bitPos);
+			temp |= ((uint64_t)1 << bitPos);														// und schreib 1
 			writeHigh();
 			
-		} else if (FAULT) {
+		} else if (FAULT) {																						// bei Fehler -> kein Sensor antwortet 
 			
 			return -1;
 			
 			
 		} else {
 			
-			if (bitPos < decisionPath[currDecision].pos) {
+			if (bitPos < decisionPath[currDecision].pos) {							// Wenn der Konflikt vor dem aktuellen liegt
 				
-				if (findDecision(bitPos) == 0) {
+				if (findDecision(bitPos) == 0) {													// gehen wie wir zuvor gegangen sind
 					writeLow();
 					
-				} else if (findDecision(bitPos) == 1) {
+				} else if (findDecision(bitPos) == 1) {										
 					temp |= ((uint64_t)1 << bitPos);
 					writeHigh();
 					
-				} else {
+				} else {																									// Ein weiterer Sensor wurde währenddessen hinzugefügt
 					setDecision(bitPos, 0);
 					writeLow();
 				}
-			} else if (bitPos == decisionPath[currDecision].pos) {
+			} else if (bitPos == decisionPath[currDecision].pos) {			// Wenn es der aktuelle Konflikt ist gehen wir jetzt mit 1 weiter
 				decisionPath[currDecision].value = 1;
 				temp |= ((uint64_t)1 << bitPos);
 				writeHigh();
-			} else {
+			} else {																										// weitere Konflikte sind nach dem Aktuellen aufgetreten			
 				if (findDecision(bitPos) == -1) {
 					setDecision(bitPos, 0);
 				}
@@ -142,6 +137,7 @@ int romSearch (ROM * rom) {
 			
 	}
 	
+	
 	uint8_t *tempPtr = (uint8_t*)&temp;												// Kopiere temp in die ROM-Struktur 
 	rom->familyCode = tempPtr[0];
 	for (int i = 0; i < 6; i++) {
@@ -149,12 +145,13 @@ int romSearch (ROM * rom) {
 	}
 	rom->crc = tempPtr[7];	
 	
-	if (currDecision == decisionCount) {
+	
+																														
+	if (currDecision == decisionCount) {											// Wenn kein weiterer Konflikt aufgetreten ist -> Stack dekrementieren 
 		decisionCount--;
 	}
-	if (decisionPath[decisionCount].value == 1) {
+	while (decisionPath[decisionCount].value == 1) {					// Sollte der vorherige Konflikt auch schon abgearbeitet sein -> Stack dekrementieren
 			decisionCount--;
-			
 		}
 	return 0;
 }
@@ -165,7 +162,7 @@ int romSearch (ROM * rom) {
 
 
 
-int findDecision (int pos) {
+int findDecision (int pos) {																// Returnt die gewählte Entschiedung 0 oder 1 
 	for (int i = 0; i <= decisionCount; i++) {
 		if (decisionPath[i].pos == pos) {
 			return decisionPath[i].value;
@@ -181,7 +178,7 @@ int findDecision (int pos) {
 
 
 
-void setDecision (int pos, int value) {
+void setDecision (int pos, int value) {											// Packt eine neue Decision auf den Stack
 	
 	decisionCount++;
 	decisionPath[decisionCount].pos = pos;
@@ -194,7 +191,7 @@ void setDecision (int pos, int value) {
 
 
 
-void readBitPair () {
+void readBitPair () {																				// liest Bitpaar ein
 	
 	currPair.bit1 = readBit();
 	currPair.bit2 = readBit();
