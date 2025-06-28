@@ -18,16 +18,14 @@ typedef struct Decision{
     int value;    // Entscheidung: 0 oder 1
 } Decision;
 
-
+Decision decisionPath[MAX_SENSORS];
 BIT_PAIR currPair;
-int conflicts[64];
 
-int currConflict = -1;
 
 
 int sensorCount = 0;
-int conflictCount = 0; 
-int searchIndex = -1;
+int decisionCount = -1; 
+
 
 #define CONFLICT 		(currPair.bit1 == 0x00 && currPair.bit2 == 0x00)
 #define ZERO 				(currPair.bit1 == 0x00 && currPair.bit2 == 0x01)
@@ -43,16 +41,15 @@ int searchIndex = -1;
 
 int SensorSearch (ROM* romList, int maxSensors) {
 	
-																																// Werte zurücksetzen
-	conflictCount = 0;
+																															// Werte zurücksetzen
+
 	sensorCount = 0;
-	searchIndex = -1;
+	decisionCount = -1;
 	
 	memset(romList, 0, (sizeof(ROM) * maxSensors));
-	memset(conflicts, 0, sizeof(conflicts));
+	memset(decisionPath, 0, sizeof(decisionPath));
 	
-	
-	
+	setDecision(-1, 0);
 	
 	
 	while (sensorCount < maxSensors) {
@@ -60,10 +57,9 @@ int SensorSearch (ROM* romList, int maxSensors) {
 		
 		
 		if (reset() != 0) {
-			return sensorCount;
+			return 0;
 		}
 	
-		currConflict = -1;
 		writeComand(SEARCH_ROM);
 		
 		if (romSearch(&romList[sensorCount]) != 0) {
@@ -76,16 +72,9 @@ int SensorSearch (ROM* romList, int maxSensors) {
 		
 		sensorCount++;																							// Zähle gefundene Geräte
 		
-		
-		if (currConflict != -1 && conflictCount < 64) {
-			conflicts[conflictCount] = currConflict;
-			conflictCount++;
-		}
-		
-		if (searchIndex + 1 >= conflictCount) {																		// nur abbrechen wenn keine weiteren Konflikte möglich sind
+		if (decisionCount <= 0) {																		// nur abbrechen wenn keine weiteren Konflikte möglich sind
 			break;
 		}
-		searchIndex++;
 	}
 	
 	return sensorCount;
@@ -100,6 +89,10 @@ int SensorSearch (ROM* romList, int maxSensors) {
 
 int romSearch (ROM * rom) {
 	uint64_t temp = 0;
+	
+	
+	
+	int currDecision = decisionCount;
 	
 	for (int bitPos = 0; bitPos < 64 ; bitPos++) {
 		
@@ -118,19 +111,35 @@ int romSearch (ROM * rom) {
 			
 			return -1;
 			
+			
 		} else {
-			if (bitPos == conflicts[searchIndex]) {
+			
+			if (bitPos < decisionPath[currDecision].pos) {
 				
+				if (findDecision(bitPos) == 0) {
+					writeLow();
+					
+				} else if (findDecision(bitPos) == 1) {
+					temp |= ((uint64_t)1 << bitPos);
+					writeHigh();
+					
+				} else {
+					setDecision(bitPos, 0);
+					writeLow();
+				}
+			} else if (bitPos == decisionPath[currDecision].pos) {
+				decisionPath[currDecision].value = 1;
 				temp |= ((uint64_t)1 << bitPos);
 				writeHigh();
-				
 			} else {
-				
-				currConflict = bitPos;
+				if (findDecision(bitPos) == -1) {
+					setDecision(bitPos, 0);
+				}
 				writeLow();
-				
 			}
-		}	
+			
+		}
+			
 	}
 	
 	uint8_t *tempPtr = (uint8_t*)&temp;												// Kopiere temp in die ROM-Struktur 
@@ -140,10 +149,45 @@ int romSearch (ROM * rom) {
 	}
 	rom->crc = tempPtr[7];	
 	
+	if (currDecision == decisionCount) {
+		decisionCount--;
+	}
+	if (decisionPath[decisionCount].value == 1) {
+			decisionCount--;
+			
+		}
 	return 0;
 }
 
 
+
+
+
+
+
+int findDecision (int pos) {
+	for (int i = 0; i <= decisionCount; i++) {
+		if (decisionPath[i].pos == pos) {
+			return decisionPath[i].value;
+		}
+	}
+
+	return -1;
+}
+
+
+
+
+
+
+
+void setDecision (int pos, int value) {
+	
+	decisionCount++;
+	decisionPath[decisionCount].pos = pos;
+	decisionPath[decisionCount].value = value;
+	
+}
 
 
 
