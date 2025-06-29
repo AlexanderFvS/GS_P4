@@ -5,66 +5,59 @@
 #include "busSystem.h"
 
 
-// delay-times
 
 
 
 
 
-int readBit () {
-	
-	pinOff();
-	timeDelay(6);
-	pinOn();
-	setInput();
-	timeDelay(9);
-	int aus = GPIOD -> IDR & OUTPUT_MASK_PIN_0;
-	timeDelay(45);
-	setOutput();
-	
-	
-	return aus;
-}
-
-uint8_t readByte () {
-	int aus = 0;
-	for (int i = 0; i < 8; i++ ) {
-		aus |= (readBit() << i);
-		
-	}
-	printf("%d\n", aus);
-	return aus;
-}
-
-void readBytes(uint8_t *rom, int count)
-{
-	for (int i = 0; i < count; i++ ) {
-		rom[i] = readByte();
-	}
-}
-
-void pushPull () {
+void pushPull () {																			//  Push-Pull bedeutet der Pin kann aktiv HIGH und LOW setzen (default = High -> Spannungsversorgung)
 	GPIOD -> OTYPER &= ~(1);
 	
 }
 
-void openDrain () {
+
+
+
+
+
+void openDrain () {																			// Pin kann senden und Empfangen je nach konfiguration
 	GPIOD -> OTYPER |= (1 << 0);
 }
 
 
-void pinOn () {
+
+
+
+
+void pinOn () {																					// Pin wird auf 1 gesetzt
 	GPIOD -> BSRR = 1;
 }
 
-void pinOff () {
+
+
+
+
+
+
+void pinOff () {																				// Pin wird auf 0 gesetzt
 	GPIOD -> BSRR = (1<<16);
 }
 
-void setOutput () {
+
+
+
+
+
+void setOutput () {																														// OpenDrain --> Output
 	GPIOD -> MODER = (GPIOD -> MODER & ~MODER_MASK_PIN_0) | OUTPUT_MASK_PIN_0;
 }
 
-void setInput () {
+
+
+
+
+	
+void setInput () {																														// 	// OpenDrain --> Inputput
 	GPIOD -> MODER = GPIOD -> MODER & ~MODER_MASK_PIN_0;
 }
+
