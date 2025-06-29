@@ -4,12 +4,14 @@
 #include <stdbool.h>
 #include "timer.h"
 
+
 typedef struct __attribute__((packed)) ROM {
 	uint8_t familyCode;
 	uint8_t serialNumber[6];
 	uint8_t crc;
 	
 } ROM;
+
 
 typedef struct __attribute__((packed)) SCRATCH_PAD
 {
@@ -23,6 +25,7 @@ typedef struct __attribute__((packed)) SCRATCH_PAD
 	
 } SCRATCH_PAD;
 
+
 // ROM befehle
 #define READ_ROM 0x33
 #define SKIP_ROM 0xCC
@@ -34,6 +37,9 @@ typedef struct __attribute__((packed)) SCRATCH_PAD
 
 
 
+
+
+
 void writeHigh ();
 
 void writeLow ();
@@ -42,9 +48,15 @@ uint8_t reset ();
 
 void writeComand (uint8_t comm);
 
+void writeRom (ROM* rom);
+
 void readRom (uint8_t *rom);
 
-void readScratchpad (uint8_t *scratch);
+void readScratchpad (SCRATCH_PAD *scratch);
+
+void readMultiScratchpad (SCRATCH_PAD * scratchPadList, ROM *romList,  int sensorCount);
+
+void readMultiTemp (ROM *romList,  int sensorCount);
 
 bool crcCheck(uint8_t *data, uint8_t length);
 
