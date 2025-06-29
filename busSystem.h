@@ -50,6 +50,10 @@ void writeComand (uint8_t comm);
 
 void writeRom (ROM* rom);
 
+int readBit ();
+
+void readBytes(uint8_t *pointer, int count);
+
 void readRom (uint8_t *rom);
 
 void readScratchpad (SCRATCH_PAD *scratch);
