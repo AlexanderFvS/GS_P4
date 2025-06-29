@@ -13,11 +13,12 @@
 #include "gp_io.h"
 #include "busSystem.h"
 #include "printSystem.h"
-#include "sensorSearch.h"
+#include "sensorSearchModule.h"
 
-#define MAX_SENSORS 5
+
 
 ROM romList[MAX_SENSORS];
+SCRATCH_PAD scratchPadList[MAX_SENSORS];
 
 
 
@@ -47,7 +48,7 @@ int main(void){
 		writeComand(READ_ROM);
 		readRom((uint8_t *)&sensor1);
 		if (crcCheck((uint8_t *)&sensor1, 8)) {
-			printSensorInfo(&sensor1, 0);
+			printSensorInfo(&sensor1, 1);
 		} else {
 			printErrorCrc();
 		}
@@ -64,9 +65,9 @@ int main(void){
 		reset();
 		writeComand(SKIP_ROM);
 		writeComand(READ_SCRATCHPAD);
-		readScratchpad((uint8_t *) &scratchPad1);
+		readScratchpad(&scratchPad1);
 		if (crcCheck((uint8_t *)&scratchPad1, 9)) {
-			printTemp(&scratchPad1);
+			printTemp(&scratchPad1, 1);
 		} else {
 			printErrorCrc();
 		}
@@ -76,26 +77,24 @@ int main(void){
 	#elif defined TEILAUFGABE_3
 		
 		while (1) {
-			int sensorCount = SensorSearch(romList, MAX_SENSORS);
+			int sensorCount = sensorSearch(romList, MAX_SENSORS);
 			if (sensorCount == 0) {
 				clearScreen (MAX_SENSORS,0);
 				printErrorSensor();
-				while (SensorSearch(romList, MAX_SENSORS) == 0) {}
+				while (sensorSearch(romList, MAX_SENSORS) == 0) {}
 				
 			}	else if (sensorCount == -1) {
 				clearScreen (MAX_SENSORS,0);
 				printErrorCrc();
-				while (SensorSearch(romList, MAX_SENSORS) == -1) {}
+				while (sensorSearch(romList, MAX_SENSORS) == -1) {}
 			} else {
 				clearScreen (MAX_SENSORS,sensorCount);
 				printSensorInfo(romList, sensorCount);
 			}
 			
-			
-			delay(1000);
-				
-				
-			
+			readMultiTemp(romList, sensorCount);
+			readMultiScratchpad(scratchPadList, romList, sensorCount);
+			printTemp(scratchPadList, sensorCount);
 				
 		}
 		
