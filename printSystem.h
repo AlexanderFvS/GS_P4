@@ -6,7 +6,7 @@ void printHeaderRow();
 
 void printSensorInfo(ROM *rom, int x);
 
-void printTemp(SCRATCH_PAD *spad);
+void printTemp(SCRATCH_PAD* scratchPointer, int sensorCount);
 
 void printErrorSensor();
 
