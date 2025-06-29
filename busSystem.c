@@ -29,6 +29,10 @@ static const uint8_t dscrc_table[256] = {
 
 
 
+// ****************************************Schreib-Befehle****************************************
+
+
+
 
 
 uint8_t reset () {
@@ -112,20 +116,65 @@ void writeHigh () {
 
 
 
+//****************************************Lese-Befehle****************************************
+
+
+
+
+
+int readBit () {
+	
+	pinOff();
+	timeDelay(6);
+	pinOn();
+	setInput();
+	timeDelay(9);
+	int aus = GPIOD -> IDR & OUTPUT_MASK_PIN_0;
+	timeDelay(45);
+	setOutput();
+	
+	
+	return aus;
+}
+
+
+
+
+
+
+uint8_t readByte () {
+	int aus = 0;
+	for (int i = 0; i < 8; i++ ) {
+		aus |= (readBit() << i);
+		
+	}
+	
+	return aus;
+}
+
+
+
+
+
+
+void readBytes(uint8_t *pointer, int count)
+{
+	for (int i = 0; i < count; i++ ) {
+		pointer[i] = readByte();
+	}
+}
+
+
+
+
+
+
 
 void readRom (uint8_t *rom) {
 	readBytes(rom, 8);
 }
 
 
-
-
-
-
-void readScratchpad (SCRATCH_PAD *scratch) {
-	uint8_t* scratchPadPointer = (uint8_t*)scratch;
-	readBytes(scratchPadPointer, 9);
-}
 
 
 
@@ -148,6 +197,17 @@ void readMultiScratchpad (SCRATCH_PAD * scratchPadList, ROM *romList,  int senso
 
 
 
+
+void readScratchpad (SCRATCH_PAD *scratch) {
+	uint8_t* scratchPadPointer = (uint8_t*)scratch;
+	readBytes(scratchPadPointer, 9);
+}
+
+
+
+
+
+
 void readMultiTemp (ROM *romList,  int sensorCount) {
 
 	for (int i = 0; i < sensorCount; i++) {
@@ -165,6 +225,11 @@ void readMultiTemp (ROM *romList,  int sensorCount) {
 	}
 }
 
+
+
+
+
+// ****************************************CRC-CHECK****************************************
 
 
 
